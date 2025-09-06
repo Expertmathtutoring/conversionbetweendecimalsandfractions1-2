@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -101,6 +101,28 @@ body {
 .pop{transform:scale(.1);opacity:0;transition:.2s}
 #message{text-align:center;margin-top:8px;font-weight:bold;font-size:1.2em}
 .paused .balloon{animation-play-state:paused !important;}
+
+/* Firework sparks */
+.spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.9;
+  animation: explode 1.8s forwards;
+}
+@keyframes explode {
+  from { transform: translate(0,0) scale(1); opacity:1; }
+  to { transform: translate(var(--x), var(--y)) scale(0.3); opacity:0; }
+}
+.fraction {
+  display:inline-block;
+  text-align:center;
+  font-size:1em;
+}
+.fraction .top { border-bottom:2px solid #fff; display:block; }
+.fraction .bottom { display:block; }
 </style>
 </head>
 <body>
@@ -129,7 +151,7 @@ body {
   const gameArea=document.getElementById("gameArea");
   const $=id=>document.getElementById(id);
 
-  const cheer=new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+  const cheer=new Audio("https://actions.google.com/sounds/v1/human_voices/applause.ogg");
   const fail=new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg");
 
   function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
@@ -140,7 +162,10 @@ body {
     const num = randInt(1, denom-1);
     correctAns = num + "/" + denom;
     const decimal = (num/denom).toFixed(denom===10 ? 1 : denom===100 ? 2 : 3);
-    $("question").textContent=`Convert to decimal: ${correctAns}`;
+
+    $("question").innerHTML = `Convert to decimal: 
+      <span class="fraction"><span class="top">${num}</span><span class="bottom">${denom}</span></span>`;
+
     return decimal;
   }
 
@@ -182,7 +207,9 @@ body {
           score++;
           $("score").textContent=score;
           el.classList.add("pop");
+          cheer.currentTime=0;
           cheer.play();
+          launchFireworks(el);
           active=false;
           setTimeout(startRound,800);
         } else {
@@ -191,6 +218,25 @@ body {
         }
       });
     });
+  }
+
+  function launchFireworks(target){
+    const rect = target.getBoundingClientRect();
+    const centerX = rect.left + rect.width/2;
+    const centerY = rect.top + rect.height/2;
+    for (let i=0; i<120; i++){ // smaller fireworks
+      const spark=document.createElement("div");
+      spark.className="spark";
+      const angle=Math.random()*2*Math.PI;
+      const dist=Math.random()*300+40; // reduced spread
+      spark.style.setProperty("--x",`${Math.cos(angle)*dist}px`);
+      spark.style.setProperty("--y",`${Math.sin(angle)*dist}px`);
+      spark.style.left=centerX+"px";
+      spark.style.top=centerY+"px";
+      spark.style.background=`hsl(${Math.random()*360},100%,60%)`;
+      document.body.appendChild(spark);
+      setTimeout(()=>spark.remove(),1800);
+    }
   }
 
   function endGame(){
@@ -207,7 +253,6 @@ body {
     $("question").textContent="Get ready!";
     setTimeout(startRound,500);
   };
-
   $("pauseTab").onclick=()=>{
     paused=!paused;
     if(paused){
@@ -219,13 +264,11 @@ body {
       if(!active && round<maxRounds) startRound();
     }
   };
-
   $("stopTab").onclick=()=>{
     active=false; paused=false;
     clearArea();
     $("question").textContent="⏹ Stopped. Press Restart to play again.";
   };
-
   $("helpTab").onclick=()=>{
     alert("🎈 How to Play:\n\n- A fraction question appears.\n- Click the balloon with the correct decimal.\n- Score a point for each correct answer.\n- 20 rounds total.\n- Use Pause, Stop, or Restart anytime.");
   };
