@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -101,8 +101,6 @@ body {
 .pop{transform:scale(.1);opacity:0;transition:.2s}
 #message{text-align:center;margin-top:8px;font-weight:bold;font-size:1.2em}
 .paused .balloon{animation-play-state:paused !important;}
-
-/* Firework sparks */
 .spark {
   position: absolute;
   width: 10px;
@@ -160,13 +158,10 @@ body {
     const denominators=[10,100,1000];
     const denom = denominators[randInt(0, denominators.length-1)];
     const num = randInt(1, denom-1);
-    correctAns = num + "/" + denom;
-    const decimal = (num/denom).toFixed(denom===10 ? 1 : denom===100 ? 2 : 3);
-
+    correctAns = (num/denom).toFixed(denom===10 ? 1 : denom===100 ? 2 : 3);
     $("question").innerHTML = `Convert to decimal: 
       <span class="fraction"><span class="top">${num}</span><span class="bottom">${denom}</span></span>`;
-
-    return decimal;
+    return correctAns;
   }
 
   function makeAnswers(correctDecimal){
@@ -180,7 +175,11 @@ body {
     return Array.from(answers).sort(()=>Math.random()-0.5);
   }
 
-  function clearArea(){balloons.forEach(b=>b.el.remove()); balloons=[]; $("message").textContent="";}
+  function clearArea(){
+    balloons.forEach(b=>b.el.remove());
+    balloons=[];
+    $("message").textContent="";
+  }
 
   function startRound(){
     if(paused) return;
@@ -192,6 +191,8 @@ body {
     const answers=makeAnswers(correctDecimal);
     active=true;
     const cols=[15,40,65,85].sort(()=>Math.random()-.5);
+    let correctClicked=false;
+
     answers.forEach((val,i)=>{
       const el=document.createElement("div");
       el.className="balloon";
@@ -210,11 +211,24 @@ body {
           cheer.currentTime=0;
           cheer.play();
           launchFireworks(el);
+          $("message").textContent="✅ Correct!";
           active=false;
-          setTimeout(startRound,800);
+          correctClicked=true;
+          setTimeout(startRound,1000);
         } else {
           fail.play();
           el.classList.add("pop");
+          $("message").textContent="❌ Try again!";
+        }
+      });
+
+      // Detect if balloons float away without click
+      el.addEventListener("animationend",()=>{
+        el.remove();
+        if(active && !correctClicked && document.querySelectorAll('.balloon').length===0){
+          active=false;
+          $("message").textContent=`⏰ Missed! Correct answer was ${correctDecimal}`;
+          setTimeout(startRound,1500);
         }
       });
     });
@@ -224,11 +238,11 @@ body {
     const rect = target.getBoundingClientRect();
     const centerX = rect.left + rect.width/2;
     const centerY = rect.top + rect.height/2;
-    for (let i=0; i<120; i++){ // smaller fireworks
+    for (let i=0; i<60; i++){
       const spark=document.createElement("div");
       spark.className="spark";
       const angle=Math.random()*2*Math.PI;
-      const dist=Math.random()*300+40; // reduced spread
+      const dist=Math.random()*200+20;
       spark.style.setProperty("--x",`${Math.cos(angle)*dist}px`);
       spark.style.setProperty("--y",`${Math.sin(angle)*dist}px`);
       spark.style.left=centerX+"px";
@@ -270,9 +284,10 @@ body {
     $("question").textContent="⏹ Stopped. Press Restart to play again.";
   };
   $("helpTab").onclick=()=>{
-    alert("🎈 How to Play:\n\n- A fraction question appears.\n- Click the balloon with the correct decimal.\n- Score a point for each correct answer.\n- 20 rounds total.\n- Use Pause, Stop, or Restart anytime.");
+    alert("🎈 How to Play:\n\n- A fraction question appears.\n- Click the balloon with the correct decimal.\n- If you miss, the correct answer will show and the game moves on.\n- 20 rounds total.\n- Use Pause, Stop, or Restart anytime.");
   };
 })();
 </script>
 </body>
 </html>
+
